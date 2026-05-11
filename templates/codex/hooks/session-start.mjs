@@ -1,0 +1,17 @@
+#!/usr/bin/env node
+import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+
+const input = readFileSync(0, 'utf8');
+
+const result = spawnSync('pnpm', ['exec', 'amg', 'codex-hook'], {
+  input,
+  encoding: 'utf8',
+  stdio: ['pipe', 'pipe', 'pipe'],
+  shell: process.platform === 'win32',
+});
+
+if (result.stdout) process.stdout.write(result.stdout);
+if (result.stderr) process.stderr.write(result.stderr);
+
+process.exitCode = result.status ?? 0;

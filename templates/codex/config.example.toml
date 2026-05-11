@@ -1,0 +1,2 @@
+[hooks]
+session_start = ".codex/hooks/session-start.mjs"
