@@ -1,5 +1,5 @@
 import { loadAmgConfig } from '../config/load.js';
-import { readFlxblContext, type FlxblContext } from '../flxbl/context.js';
+import { readFlxblContext, type FlxblContext, type ReadFlxblContextOptions } from '../flxbl/context.js';
 import { formatError, redactSecrets, secretValuesFromEnv } from '../output/secrets.js';
 
 const MIN_SCHEMA_VERSION = '1.3.0';
@@ -28,7 +28,7 @@ export type AmgStatus = {
   warnings: string[];
 };
 
-export type StatusContextReader = () => Promise<FlxblContext>;
+export type StatusContextReader = (runtime: ReadFlxblContextOptions) => Promise<FlxblContext>;
 
 export type GetAmgStatusOptions = {
   cwd: string;
@@ -42,9 +42,15 @@ export async function getAmgStatus({
   readContext = readFlxblContext,
 }: GetAmgStatusOptions): Promise<AmgStatus> {
   const warnings: string[] = [];
-  const secrets = secretValuesFromEnv(env);
   const { runtime } = await loadAmgConfig({ cwd, env });
+  const secrets = [
+    ...secretValuesFromEnv(env),
+    runtime.apiKey,
+    runtime.accessToken,
+    runtime.refreshToken,
+  ].filter((value): value is string => Boolean(value && value.length >= 6));
 
+  if (!runtime.instanceUrl) warnings.push('Missing required server env: FLXBL_INSTANCE_URL');
   if (!runtime.tenantId) warnings.push('Missing required server env: FLXBL_TENANT_ID');
   if (!runtime.apiKey) warnings.push('Missing required server env: FLXBL_API_KEY');
 
@@ -58,7 +64,10 @@ export async function getAmgStatus({
   }
 
   try {
-    const context = await readContext();
+    const context = await readContext({
+      instanceUrl: runtime.instanceUrl!,
+      apiKey: runtime.apiKey!,
+    });
     const schemaWarnings = schemaCompatibilityWarnings(context.tenant);
 
     return {

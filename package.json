@@ -1,18 +1,30 @@
 {
-  "name": "@agent-memory-graph/cli",
+  "name": "@flxbl-dev/amg",
   "version": "0.1.0",
-  "private": true,
-  "description": "Portable Agent Memory Graph adoption CLI.",
+  "description": "Agent Memory Graph CLI for coding-agent memory on FLXBL.",
   "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flxbl-dev/amg.git"
+  },
   "files": ["dist", "templates", "README.md", "LICENSE"],
   "bin": {
     "amg": "./dist/bin/amg.js"
   },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsup",
     "test": "vitest run src/**/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify:package": "node scripts/verify-package.mjs",
+    "pack:dry-run": "npm pack --dry-run --json"
   },
   "dependencies": {
     "@flxbl-dev/client": "^0.6.0",

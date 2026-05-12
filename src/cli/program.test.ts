@@ -1,6 +1,20 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import { createAmgProgram } from './program.js';
+
+async function withTempDir<T>(run: (dir: string) => Promise<T>): Promise<T> {
+  const dir = await mkdtemp(join(tmpdir(), 'amg-program-'));
+
+  try {
+    return await run(dir);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
 
 describe('createAmgProgram', () => {
   it('registers the public top-level commands in order', () => {
@@ -30,20 +44,24 @@ describe('createAmgProgram', () => {
   });
 
   it('runs status as parseable json without throwing when env is missing', async () => {
-    const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    const previousExitCode = process.exitCode;
+    await withTempDir(async (dir) => {
+      const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+      const previousExitCode = process.exitCode;
 
-    await createAmgProgram({ cwd: process.cwd(), env: {} }).parseAsync(['node', 'amg', 'status', '--format', 'json']);
+      try {
+        await createAmgProgram({ cwd: dir, env: {} }).parseAsync(['node', 'amg', 'status', '--format', 'json']);
 
-    const output = write.mock.calls.map(([chunk]) => String(chunk)).join('');
+        const output = write.mock.calls.map(([chunk]) => String(chunk)).join('');
 
-    expect(JSON.parse(output)).toMatchObject({
-      configured: false,
-      safeToUse: false,
+        expect(JSON.parse(output)).toMatchObject({
+          configured: false,
+          safeToUse: false,
+        });
+        expect(process.exitCode).toBe(1);
+      } finally {
+        process.exitCode = previousExitCode;
+        write.mockRestore();
+      }
     });
-    expect(process.exitCode).toBe(1);
-
-    process.exitCode = previousExitCode;
-    write.mockRestore();
   });
 });

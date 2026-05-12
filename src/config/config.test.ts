@@ -102,6 +102,90 @@ describe('loadAmgConfig', () => {
     });
   });
 
+  it('loads FLXBL runtime values from .env.local without writing secrets into config', async () => {
+    await withTempDir(async (dir) => {
+      await writeFile(
+        join(dir, '.env.local'),
+        [
+          'FLXBL_INSTANCE_URL=https://env-file.example',
+          'FLXBL_TENANT_ID=tenant_from_env_file',
+          'FLXBL_API_KEY=key_secret_value',
+          '',
+        ].join('\n'),
+      );
+
+      const { config, runtime } = await loadAmgConfig({ cwd: dir, env: {} });
+
+      expect(config).toEqual({ version: 1, agents: {} });
+      expect(runtime).toMatchObject({
+        instanceUrl: 'https://env-file.example',
+        tenantId: 'tenant_from_env_file',
+        apiKey: 'key_secret_value',
+      });
+      expect(JSON.stringify(config)).not.toContain('key_secret_value');
+    });
+  });
+
+  it('keeps provided environment ahead of local env files', async () => {
+    await withTempDir(async (dir) => {
+      await writeFile(
+        join(dir, '.env.local'),
+        [
+          'FLXBL_INSTANCE_URL=https://env-file.example',
+          'FLXBL_TENANT_ID=tenant_from_env_file',
+          'FLXBL_API_KEY=key_from_env_file',
+          '',
+        ].join('\n'),
+      );
+
+      const { runtime } = await loadAmgConfig({
+        cwd: dir,
+        env: {
+          FLXBL_TENANT_ID: 'tenant_from_process_env',
+          FLXBL_API_KEY: 'key_from_process_env',
+        },
+      });
+
+      expect(runtime).toMatchObject({
+        instanceUrl: 'https://env-file.example',
+        tenantId: 'tenant_from_process_env',
+        apiKey: 'key_from_process_env',
+      });
+    });
+  });
+
+  it('keeps env files ahead of non-secret JSON config values', async () => {
+    await withTempDir(async (dir) => {
+      await mkdir(join(dir, '.amg'));
+      await writeFile(
+        join(dir, '.amg/config.json'),
+        JSON.stringify({
+          instanceUrl: 'https://config.example',
+          tenantId: 'tenant_from_config',
+        }),
+      );
+      await writeFile(
+        join(dir, '.env.development.local'),
+        [
+          'FLXBL_INSTANCE_URL=https://env-file.example',
+          'FLXBL_TENANT_ID=tenant_from_env_file',
+          '',
+        ].join('\n'),
+      );
+
+      const { config, runtime } = await loadAmgConfig({ cwd: dir, env: {} });
+
+      expect(config).toMatchObject({
+        instanceUrl: 'https://config.example',
+        tenantId: 'tenant_from_config',
+      });
+      expect(runtime).toMatchObject({
+        instanceUrl: 'https://env-file.example',
+        tenantId: 'tenant_from_env_file',
+      });
+    });
+  });
+
   it('defaults optional config fields to portable empty values', async () => {
     await withTempDir(async (dir) => {
       const { config, runtime } = await loadAmgConfig({ cwd: dir, env: {} });

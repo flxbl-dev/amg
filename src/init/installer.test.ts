@@ -66,6 +66,15 @@ describe('planInit', () => {
       );
       expect(withHooks.operations.map((operation) => operation.path)).toContain('.codex/config.example.toml');
       expect(withHooks.operations.map((operation) => operation.path)).toContain('.codex/hooks/session-start.mjs');
+      expect(withHooks.operations.map((operation) => operation.path)).toContain(
+        '.codex/hooks/user-prompt-submit.mjs',
+      );
+      expect(withHooks.operations.map((operation) => operation.path)).toContain('.codex/hooks/pre-tool-use.mjs');
+      expect(withHooks.operations.map((operation) => operation.path)).toContain(
+        '.codex/hooks/permission-request.mjs',
+      );
+      expect(withHooks.operations.map((operation) => operation.path)).toContain('.codex/hooks/post-tool-use.mjs');
+      expect(withHooks.operations.map((operation) => operation.path)).toContain('.codex/hooks/stop.mjs');
     });
   });
 
@@ -173,8 +182,72 @@ describe('applyInitPlan', () => {
       await applyInitPlan(await planInit({ cwd: dir, assistants: [], codexHooks: false }));
 
       await expect(readFile(join(dir, '.amg/agent-command-contract.md'), 'utf8')).resolves.toContain(
-        'pnpm exec amg link',
+        'pnpm exec amg link --yes',
       );
+    });
+  });
+
+  it('writes agent guidance with objective-bearing recall commands and link prerequisites', async () => {
+    await withTempDir(async (dir) => {
+      await applyInitPlan(
+        await planInit({
+          cwd: dir,
+          assistants: ['codex', 'claude', 'cursor'],
+          codexHooks: false,
+          claudeSkill: true,
+          cursorCommands: true,
+        }),
+      );
+
+      const files = [
+        'AGENTS.md',
+        '.claude/rules/amg.md',
+        '.cursor/rules/amg.mdc',
+        '.amg/agent-command-contract.md',
+        '.claude/skills/amg-recall/SKILL.md',
+        '.cursor/commands/amg-recall.md',
+      ];
+
+      for (const file of files) {
+        const text = await readFile(join(dir, file), 'utf8');
+        expect(text).toContain('amg recall --objective');
+        expect(text).toContain('--format markdown');
+        expect(text).not.toContain('Use `pnpm exec amg recall` for context-sensitive work');
+      }
+
+      const agents = await readFile(join(dir, 'AGENTS.md'), 'utf8');
+      expect(agents).toContain('after `pnpm exec amg link --yes` has written `.amg/config.json` defaults');
+      expect(agents).toContain('explicit `--workspace-id`, `--project-id`, and `--agent-id` overrides');
+    });
+  });
+
+  it('installs the full Codex hook matrix when codexHooks is true', async () => {
+    await withTempDir(async (dir) => {
+      await applyInitPlan(await planInit({ cwd: dir, assistants: ['codex'], codexHooks: true }));
+
+      const expected = [
+        ['.codex/config.example.toml', 'codex_hooks'],
+        ['.codex/hooks/session-start.mjs', 'SessionStart'],
+        ['.codex/hooks/user-prompt-submit.mjs', 'UserPromptSubmit'],
+        ['.codex/hooks/pre-tool-use.mjs', 'PreToolUse'],
+        ['.codex/hooks/permission-request.mjs', 'PermissionRequest'],
+        ['.codex/hooks/post-tool-use.mjs', 'PostToolUse'],
+        ['.codex/hooks/stop.mjs', 'Stop'],
+      ] as const;
+
+      for (const [file, marker] of expected) {
+        const text = await readFile(join(dir, file), 'utf8');
+        expect(text).toContain(marker);
+        expect(text.toLowerCase()).toContain('amg');
+      }
+
+      const config = await readFile(join(dir, '.codex/config.example.toml'), 'utf8');
+      expect(config).toContain('hooks.SessionStart');
+      expect(config).toContain('hooks.UserPromptSubmit');
+      expect(config).toContain('hooks.PreToolUse');
+      expect(config).toContain('hooks.PermissionRequest');
+      expect(config).toContain('hooks.PostToolUse');
+      expect(config).toContain('hooks.Stop');
     });
   });
 
@@ -186,6 +259,7 @@ describe('applyInitPlan', () => {
 
       expect(hook).toContain("readFileSync(0, 'utf8')");
       expect(hook).toContain('codex-hook');
+      expect(hook).toContain('AMG_CODEX_HOOK_EVENT');
     });
   });
 

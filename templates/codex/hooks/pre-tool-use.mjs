@@ -2,7 +2,7 @@
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
-const expectedEvent = 'SessionStart';
+const expectedEvent = 'PreToolUse';
 const input = readFileSync(0, 'utf8');
 
 const result = spawnSync('pnpm', ['exec', 'amg', 'codex-hook'], {

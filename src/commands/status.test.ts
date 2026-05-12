@@ -1,6 +1,20 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { getAmgStatus, renderStatusText, type StatusContextReader } from './status.js';
+
+async function withTempDir<T>(run: (dir: string) => Promise<T>): Promise<T> {
+  const dir = await mkdtemp(join(tmpdir(), 'amg-status-'));
+
+  try {
+    return await run(dir);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
 
 const compatibleContext: StatusContextReader = async () => ({
   tenant: {
@@ -13,39 +27,52 @@ const compatibleContext: StatusContextReader = async () => ({
 
 describe('getAmgStatus', () => {
   it('returns parseable unsafe status when FLXBL env is missing', async () => {
-    const status = await getAmgStatus({
-      cwd: process.cwd(),
-      env: {},
-      readContext: compatibleContext,
-    });
+    await withTempDir(async (dir) => {
+      const status = await getAmgStatus({
+        cwd: dir,
+        env: {},
+        readContext: compatibleContext,
+      });
 
-    expect(status).toMatchObject({
-      configured: false,
-      safeToUse: false,
-      warnings: ['Missing required server env: FLXBL_TENANT_ID', 'Missing required server env: FLXBL_API_KEY'],
+      expect(status).toMatchObject({
+        configured: false,
+        safeToUse: false,
+        warnings: [
+          'Missing required server env: FLXBL_INSTANCE_URL',
+          'Missing required server env: FLXBL_TENANT_ID',
+          'Missing required server env: FLXBL_API_KEY',
+        ],
+      });
+      expect(status.commands).toEqual([
+        'init',
+        'status',
+        'link',
+        'recall',
+        'remember',
+        'export-context',
+        'task:create',
+        'task:list',
+        'decide',
+        'codex-hook',
+      ]);
     });
-    expect(status.commands).toEqual([
-      'init',
-      'status',
-      'link',
-      'recall',
-      'remember',
-      'export-context',
-      'task:create',
-      'task:list',
-      'decide',
-      'codex-hook',
-    ]);
   });
 
   it('returns safe status for a compatible AgentMemoryGraph tenant', async () => {
     const status = await getAmgStatus({
       cwd: process.cwd(),
       env: {
+        FLXBL_INSTANCE_URL: 'https://api.flxbl.dev/',
         FLXBL_TENANT_ID: 'tenant_test',
         FLXBL_API_KEY: 'key_secret_value',
       },
-      readContext: compatibleContext,
+      readContext: async (runtime) => {
+        expect(runtime).toEqual({
+          instanceUrl: 'https://api.flxbl.dev/',
+          apiKey: 'key_secret_value',
+        });
+        return compatibleContext(runtime);
+      },
     });
 
     expect(status).toMatchObject({
@@ -65,6 +92,7 @@ describe('getAmgStatus', () => {
     const status = await getAmgStatus({
       cwd: process.cwd(),
       env: {
+        FLXBL_INSTANCE_URL: 'https://api.flxbl.dev',
         FLXBL_TENANT_ID: 'tenant_test',
         FLXBL_API_KEY: 'key_secret_value',
       },
@@ -86,6 +114,7 @@ describe('getAmgStatus', () => {
     const status = await getAmgStatus({
       cwd: process.cwd(),
       env: {
+        FLXBL_INSTANCE_URL: 'https://api.flxbl.dev',
         FLXBL_TENANT_ID: 'tenant_test',
         FLXBL_API_KEY: 'key_secret_value',
         FLXBL_ACCESS_TOKEN: 'access_secret_value',
@@ -101,6 +130,34 @@ describe('getAmgStatus', () => {
     expect(text).toContain('Authorization: Bearer [REDACTED]');
     expect(text).not.toContain('access_secret_value');
     expect(text).not.toContain('key_secret_value');
+  });
+
+  it('redacts secrets loaded from local env files when context lookup fails', async () => {
+    await withTempDir(async (dir) => {
+      await writeFile(
+        join(dir, '.env.local'),
+        [
+          'FLXBL_INSTANCE_URL=https://api.flxbl.dev',
+          'FLXBL_TENANT_ID=tenant_test',
+          'FLXBL_API_KEY=key_secret_from_env_file',
+          '',
+        ].join('\n'),
+      );
+
+      const status = await getAmgStatus({
+        cwd: dir,
+        env: {},
+        readContext: async (runtime) => {
+          throw new Error(`Failed with ${runtime.apiKey}`);
+        },
+      });
+
+      const text = JSON.stringify(status);
+
+      expect(status.safeToUse).toBe(false);
+      expect(text).toContain('[REDACTED]');
+      expect(text).not.toContain('key_secret_from_env_file');
+    });
   });
 });
 

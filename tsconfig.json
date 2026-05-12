@@ -1,15 +1,20 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "allowJs": false,
     "declaration": true,
     "declarationMap": true,
+    "esModuleInterop": true,
     "jsx": "react-jsx",
+    "lib": ["esnext", "dom"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "noEmit": true,
+    "resolveJsonModule": true,
     "incremental": false,
     "rootDir": "src",
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
     "outDir": "dist",
     "types": ["node", "vitest"]
   },

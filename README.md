@@ -1,11 +1,11 @@
-# @agent-memory-graph/cli
+# @flxbl-dev/amg
 
 Portable Agent Memory Graph adoption CLI for existing repositories.
 
 ## Install
 
 ```sh
-pnpm add -D @agent-memory-graph/cli
+pnpm add -D @flxbl-dev/amg
 pnpm exec amg init --assistants codex,cursor
 ```
 
@@ -15,7 +15,7 @@ does not write tenant data.
 
 ## Configure
 
-Set server-only FLXBL values in your local environment or `.env.local`:
+Set server-only FLXBL values in your shell, `.env`, or `.env.local`:
 
 ```sh
 FLXBL_INSTANCE_URL=https://api.flxbl.dev
@@ -36,6 +36,18 @@ pnpm exec amg recall --objective "Prepare implementation context" --format markd
 
 `amg status --format json` can exit nonzero when `safeToUse` is false while
 still printing parseable JSON on stdout.
+
+`amg link --yes` writes local AMG identity defaults to `.amg/config.json` so
+later `recall`, `remember`, and `export-context` commands do not need repeated
+workspace, project, and agent IDs.
+
+## Hooks
+
+`amg init --assistants codex,claude,cursor` installs assistant guidance.
+Add `--codex-hooks` to install Codex hook wrappers for recall and safety
+checks. Hooks call `pnpm exec amg` from the consuming repository, fail open for
+recall when AMG is not configured, and deny obvious secret-printing commands
+before they run.
 
 ## Safety Contract
 
@@ -60,4 +72,4 @@ tenant. Hooks fail open for recall and never auto-write memory.
 
 ## License
 
-MIT. See the repository license for the full terms.
+MIT. See `LICENSE` for the full terms.

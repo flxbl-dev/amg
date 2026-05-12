@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { loadEnvFiles, type EnvMap } from './env-files.js';
 import { AmgConfigSchema, type AmgConfig } from './schema.js';
 
 export type AmgRuntimeConfig = {
@@ -36,12 +37,24 @@ export async function loadAmgConfig({ cwd, env = process.env }: LoadAmgConfigOpt
   const base = await readOptionalJson(paths.configPath);
   const local = await readOptionalJson(paths.localConfigPath);
   const config = AmgConfigSchema.parse(mergeConfig(base, local));
+  const envFiles = loadEnvFiles(cwd);
+  const runtimeEnv = mergeEnv(envFiles, env);
 
   return {
     config,
-    runtime: runtimeFromConfigAndEnv(config, env),
+    runtime: runtimeFromConfigAndEnv(config, runtimeEnv),
     paths,
   };
+}
+
+function mergeEnv(fileEnv: EnvMap, providedEnv: EnvMap): EnvMap {
+  const merged: EnvMap = { ...fileEnv };
+
+  for (const [key, value] of Object.entries(providedEnv)) {
+    if (value !== undefined) merged[key] = value;
+  }
+
+  return merged;
 }
 
 function mergeConfig(base: RawConfig, local: RawConfig): RawConfig {

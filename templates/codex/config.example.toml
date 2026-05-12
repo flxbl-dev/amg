@@ -1,2 +1,53 @@
-[hooks]
-session_start = ".codex/hooks/session-start.mjs"
+[features]
+codex_hooks = true
+
+[[hooks.SessionStart]]
+matcher = "startup|resume"
+
+[[hooks.SessionStart.hooks]]
+type = "command"
+command = 'node "$(git rev-parse --show-toplevel)/.codex/hooks/session-start.mjs"'
+timeout = 30
+statusMessage = "Loading AMG context"
+
+[[hooks.UserPromptSubmit]]
+
+[[hooks.UserPromptSubmit.hooks]]
+type = "command"
+command = 'node "$(git rev-parse --show-toplevel)/.codex/hooks/user-prompt-submit.mjs"'
+timeout = 30
+statusMessage = "Checking AMG recall"
+
+[[hooks.PreToolUse]]
+matcher = "Bash|apply_patch|Edit|Write"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = 'node "$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-use.mjs"'
+timeout = 10
+statusMessage = "Checking AMG safety policy"
+
+[[hooks.PermissionRequest]]
+matcher = "Bash|apply_patch|Edit|Write"
+
+[[hooks.PermissionRequest.hooks]]
+type = "command"
+command = 'node "$(git rev-parse --show-toplevel)/.codex/hooks/permission-request.mjs"'
+timeout = 10
+statusMessage = "Checking AMG approval policy"
+
+[[hooks.PostToolUse]]
+matcher = "Bash|apply_patch|Edit|Write"
+
+[[hooks.PostToolUse.hooks]]
+type = "command"
+command = 'node "$(git rev-parse --show-toplevel)/.codex/hooks/post-tool-use.mjs"'
+timeout = 10
+statusMessage = "Reviewing AMG context"
+
+[[hooks.Stop]]
+
+[[hooks.Stop.hooks]]
+type = "command"
+command = 'node "$(git rev-parse --show-toplevel)/.codex/hooks/stop.mjs"'
+timeout = 10

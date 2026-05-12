@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.development
+.env.development.local
+.amg/config.local.json
+.amg/context-pack.md
+.amg/context-pack-*.md
+*.tgz
+coverage/
