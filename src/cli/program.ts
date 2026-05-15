@@ -7,12 +7,14 @@ import { runInitCommand } from '../commands/init.js';
 import { runLinkCommand } from '../commands/link.js';
 import { runRecallCommand } from '../commands/recall.js';
 import { runRememberCommand } from '../commands/remember.js';
+import { runSchemaExportCommand } from '../commands/schema.js';
 import { getAmgStatus, renderStatusText } from '../commands/status.js';
 import { runTaskCreateCommand, runTaskListCommand } from '../commands/task.js';
 
 const commandNames = [
   'init',
   'status',
+  'schema',
   'link',
   'recall',
   'remember',
@@ -45,6 +47,11 @@ export function createAmgProgram(options: CreateAmgProgramOptions = {}): Command
 
     if (commandName === 'status') {
       registerStatusCommand(program, { cwd, env });
+      continue;
+    }
+
+    if (commandName === 'schema') {
+      registerSchemaCommand(program, { cwd });
       continue;
     }
 
@@ -335,6 +342,26 @@ function registerStatusCommand(
       if (!status.safeToUse) {
         process.exitCode = 1;
       }
+    });
+}
+
+function registerSchemaCommand(
+  program: Command,
+  options: Required<Pick<CreateAmgProgramOptions, 'cwd'>>,
+) {
+  const schema = program.command('schema').description('Work with AMG FLXBL schema files');
+
+  schema
+    .command('export')
+    .description('Export the canonical AMG FLXBL schema template')
+    .requiredOption('--output <path>', 'Output file path')
+    .option('--force', 'Overwrite an existing output file', false)
+    .action(async (commandOptions: { output: string; force: boolean }) => {
+      await runSchemaExportCommand({
+        cwd: options.cwd,
+        output: commandOptions.output,
+        force: commandOptions.force,
+      });
     });
 }
 

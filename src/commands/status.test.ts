@@ -19,7 +19,7 @@ async function withTempDir<T>(run: (dir: string) => Promise<T>): Promise<T> {
 const compatibleContext: StatusContextReader = async () => ({
   tenant: {
     schemaName: 'AgentMemoryGraph',
-    schemaVersion: '1.3.0',
+    schemaVersion: '1.0.0',
     schemaStatus: 'ACTIVE',
     instanceUrl: 'https://api.flxbl.dev',
   },
@@ -46,6 +46,7 @@ describe('getAmgStatus', () => {
       expect(status.commands).toEqual([
         'init',
         'status',
+        'schema:export',
         'link',
         'recall',
         'remember',
@@ -80,7 +81,7 @@ describe('getAmgStatus', () => {
       safeToUse: true,
       tenant: {
         schemaName: 'AgentMemoryGraph',
-        schemaVersion: '1.3.0',
+        schemaVersion: '1.0.0',
         schemaStatus: 'ACTIVE',
       },
       warnings: [],
@@ -99,7 +100,7 @@ describe('getAmgStatus', () => {
       readContext: async () => ({
         tenant: {
           schemaName: 'OtherSchema',
-          schemaVersion: '1.2.9',
+          schemaVersion: '0.9.9',
           schemaStatus: 'ACTIVE',
         },
       }),
@@ -107,7 +108,7 @@ describe('getAmgStatus', () => {
 
     expect(status.safeToUse).toBe(false);
     expect(status.warnings).toContain('Expected schemaName AgentMemoryGraph, received OtherSchema.');
-    expect(status.warnings).toContain('Expected schemaVersion at least 1.3.0, received 1.2.9.');
+    expect(status.warnings).toContain('Expected schemaVersion at least 1.0.0, received 0.9.9.');
   });
 
   it('redacts secrets from context errors', async () => {

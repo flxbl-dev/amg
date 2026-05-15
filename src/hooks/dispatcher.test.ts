@@ -47,14 +47,12 @@ describe('dispatchCodexHook', () => {
 
     expect(calls).toEqual([
       {
-        command: 'pnpm',
-        args: ['exec', 'amg', 'status', '--format', 'json'],
+        command: 'amg',
+        args: ['status', '--format', 'json'],
       },
       {
-        command: 'pnpm',
+        command: 'amg',
         args: [
-          'exec',
-          'amg',
           'recall',
           '--objective',
           'Recall startup context for this Codex session',
@@ -113,14 +111,12 @@ describe('dispatchCodexHook', () => {
 
     expect(calls).toEqual([
       {
-        command: 'pnpm',
-        args: ['exec', 'amg', 'status', '--format', 'json'],
+        command: 'amg',
+        args: ['status', '--format', 'json'],
       },
       {
-        command: 'pnpm',
+        command: 'amg',
         args: [
-          'exec',
-          'amg',
           'recall',
           '--objective',
           'Implement Task 6',

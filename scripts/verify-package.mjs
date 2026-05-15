@@ -32,18 +32,42 @@ try {
 
   run('pnpm', ['add', '-D', tarballPath], { cwd: consumerDir });
 
-  const help = run('pnpm', ['exec', 'amg', '--help'], { cwd: consumerDir });
+  const amgBin = join(consumerDir, 'node_modules', '.bin', process.platform === 'win32' ? 'amg.cmd' : 'amg');
+
+  const help = run(amgBin, ['--help'], { cwd: consumerDir });
   assertIncludes(help.stdout, 'Usage: amg', 'amg --help should include Usage: amg');
   assertNoSecretOutput(help.stdout + help.stderr, 'amg --help');
 
-  const dryRun = run('pnpm', ['exec', 'amg', 'init', '--assistants', 'codex,cursor', '--dry-run'], {
+  const schemaExport = run(amgBin, ['schema', 'export', '--output', './amg-flxbl-schema.json'], {
+    cwd: consumerDir,
+  });
+  assertIncludes(schemaExport.stdout, 'Exported AMG FLXBL schema', 'schema export should confirm output');
+  assertIncludes(schemaExport.stdout, 'platform.flxbl.dev', 'schema export should tell users where to import');
+  assertIncludes(
+    schemaExport.stdout,
+    'amg status --format json',
+    'schema export should tell users how to verify the tenant',
+  );
+  assertNoSecretOutput(schemaExport.stdout + schemaExport.stderr, 'amg schema export');
+
+  const exportedSchema = JSON.parse(await readFile(join(consumerDir, 'amg-flxbl-schema.json'), 'utf8'));
+  if (exportedSchema.name !== 'AgentMemoryGraph' || exportedSchema.version !== '1.0.0') {
+    throw new Error(
+      `Expected exported schema to be AgentMemoryGraph 1.0.0, received ${JSON.stringify({
+        name: exportedSchema.name,
+        version: exportedSchema.version,
+      })}.`,
+    );
+  }
+
+  const dryRun = run(amgBin, ['init', '--assistants', 'codex,cursor', '--dry-run'], {
     cwd: consumerDir,
   });
   assertIncludes(dryRun.stdout, 'AGENTS.md', 'amg init --dry-run should plan AGENTS.md');
   assertNoSecretOutput(dryRun.stdout + dryRun.stderr, 'amg init --dry-run');
 
-  run('pnpm', ['exec', 'amg', 'init', '--assistants', 'codex,cursor', '--codex-hooks'], { cwd: consumerDir });
-  run('pnpm', ['exec', 'amg', 'init', '--assistants', 'codex,cursor', '--codex-hooks'], { cwd: consumerDir });
+  run(amgBin, ['init', '--assistants', 'codex,cursor', '--codex-hooks'], { cwd: consumerDir });
+  run(amgBin, ['init', '--assistants', 'codex,cursor', '--codex-hooks'], { cwd: consumerDir });
 
   const agentsText = await readFile(join(consumerDir, 'AGENTS.md'), 'utf8');
   const managedBlockCount = (agentsText.match(/BEGIN AMG MANAGED BLOCK/g) ?? []).length;
@@ -67,7 +91,7 @@ try {
   delete statusEnv.FLXBL_INSTANCE_URL;
   delete statusEnv.AMG_DEMO_SEED_SECRET;
 
-  const status = spawn('pnpm', ['exec', 'amg', 'status', '--format', 'json'], {
+  const status = spawn(amgBin, ['status', '--format', 'json'], {
     cwd: consumerDir,
     env: statusEnv,
     allowFailure: true,
@@ -140,6 +164,7 @@ function assertTarballContainsTemplates(tarballPath) {
   assertIncludes(listing, 'package/templates/agents/AGENTS.block.md', 'package tarball should include assistant templates');
   assertIncludes(listing, 'package/templates/cursor/amg.mdc', 'package tarball should include Cursor rule templates');
   assertIncludes(listing, 'package/templates/amg/env.example', 'package tarball should include AMG env template');
+  assertIncludes(listing, 'package/templates/flxbl/schema.json', 'package tarball should include AMG FLXBL schema');
   assertIncludes(listing, 'package/LICENSE', 'package tarball should include license');
   assertExcludes(listing, 'package/docs/', 'package tarball should not include local app docs');
   assertExcludes(listing, 'package/.env', 'package tarball should not include env files');

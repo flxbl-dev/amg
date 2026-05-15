@@ -5,8 +5,24 @@ Portable Agent Memory Graph adoption CLI for existing repositories.
 ## Install
 
 ```sh
-pnpm add -D @flxbl-dev/amg
-pnpm exec amg init --assistants codex,cursor
+npm install -g @flxbl-dev/amg
+```
+
+## First-Time FLXBL Schema Setup
+
+Export the packaged AMG schema:
+
+```sh
+amg schema export --output ./amg-flxbl-schema.json
+```
+
+Import `amg-flxbl-schema.json` in `https://platform.flxbl.dev`, then configure
+server-only FLXBL values for the tenant where the schema is active.
+
+## Initialize A Repository
+
+```sh
+amg init --assistants codex,cursor
 ```
 
 `amg init` writes local `.amg` guidance, assistant instruction blocks, optional
@@ -29,9 +45,9 @@ screenshots, logs, or agent context packs.
 ## Use
 
 ```sh
-pnpm exec amg status --format json
-pnpm exec amg link --workspace "FLXBL Labs" --project "Agent Memory Graph" --agents codex,cursor --yes
-pnpm exec amg recall --objective "Prepare implementation context" --format markdown
+amg status --format json
+amg link --workspace "FLXBL Labs" --project "Agent Memory Graph" --agents codex,cursor --yes
+amg recall --objective "Prepare implementation context" --format markdown
 ```
 
 `amg status --format json` can exit nonzero when `safeToUse` is false while
@@ -45,7 +61,7 @@ workspace, project, and agent IDs.
 
 `amg init --assistants codex,claude,cursor` installs assistant guidance.
 Add `--codex-hooks` to install Codex hook wrappers for recall and safety
-checks. Hooks call `pnpm exec amg` from the consuming repository, fail open for
+checks. Hooks call `amg` from the consuming repository, fail open for
 recall when AMG is not configured, and deny obvious secret-printing commands
 before they run.
 
@@ -53,19 +69,20 @@ before they run.
 
 Read-only or local-only commands:
 
-- `pnpm exec amg init`
-- `pnpm exec amg status --format json`
-- `pnpm exec amg recall` without `--persist`
-- `pnpm exec amg export-context` without `--persist`
+- `amg init`
+- `amg schema export --output ./amg-flxbl-schema.json`
+- `amg status --format json`
+- `amg recall` without `--persist`
+- `amg export-context` without `--persist`
 
 Tenant-writing commands:
 
-- `pnpm exec amg link --yes`
-- `pnpm exec amg remember`
-- `pnpm exec amg task create`
-- `pnpm exec amg decide`
-- `pnpm exec amg recall --persist`
-- `pnpm exec amg export-context --persist`
+- `amg link --yes`
+- `amg remember`
+- `amg task create`
+- `amg decide`
+- `amg recall --persist`
+- `amg export-context --persist`
 
 Run tenant-writing commands only when you intend to mutate the configured FLXBL
 tenant. Hooks fail open for recall and never auto-write memory.

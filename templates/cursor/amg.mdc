@@ -6,7 +6,11 @@ alwaysApply: true
 # Agent Memory Graph
 
 Use `.amg/agent-command-contract.md` as the local AMG command contract.
-Run `pnpm exec amg status --format json` when AMG configuration is uncertain.
-Run `pnpm exec amg recall --objective "<current objective>" --format markdown` for context-sensitive work after `pnpm exec amg link --yes` has written `.amg/config.json` defaults, or pass explicit `--workspace-id`, `--project-id`, and `--agent-id` overrides.
+Run `amg status --format json` when AMG configuration is uncertain. Parse stdout as JSON even when the command exits nonzero.
+Run `amg recall --objective "<current objective>" --format markdown` for context-sensitive work after `amg link --yes` has written `.amg/config.json` defaults, or pass explicit `--workspace-id`, `--project-id`, and `--agent-id` overrides.
+For durable implementation work, create or reuse an AMG task with `amg task create` or `amg task list`.
+Record real decisions with `amg decide --task-id "<task id>" --title "<decision>" --rationale "<why>"`.
+Use `amg remember` only for durable constraints, decisions, reusable bug lessons, workflow rules, project conventions, supersessions, and remaining work.
+Use `amg export-context --objective "<handoff objective>" --output .amg/context-pack.md --format markdown` for handoffs or long context transitions.
 Tenant-writing commands require explicit intent: `link --yes`, `remember`, `task create`, `decide`, `recall --persist`, and `export-context --persist`.
 Never print `.env`, FLXBL keys, seed secrets, tokens, or authorization headers.

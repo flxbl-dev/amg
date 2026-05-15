@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 
 import { addGitignoreEntries } from './gitignore.js';
 import { upsertManagedBlock } from './managed-block.js';
+import { CODEX_HOOK_TEMPLATE_FILES, loadInitTemplates } from './templates.js';
 
 export const SUPPORTED_ASSISTANTS = ['codex', 'claude', 'cursor'] as const;
 
@@ -42,6 +43,7 @@ export async function planInit({
   claudeSkill = false,
   cursorCommands = false,
 }: PlanInitOptions): Promise<InitPlan> {
+  const templates = await loadInitTemplates();
   const operations: InitOperation[] = [];
   const configPath = join(cwd, '.amg/config.json');
 
@@ -51,11 +53,11 @@ export async function planInit({
   });
   operations.push({
     path: '.amg/env.example',
-    content: AMG_ENV_EXAMPLE,
+    content: templates.amgEnvExample,
   });
   operations.push({
     path: '.amg/agent-command-contract.md',
-    content: AGENT_COMMAND_CONTRACT,
+    content: templates.agentCommandContract,
   });
   operations.push({
     path: '.gitignore',
@@ -65,51 +67,51 @@ export async function planInit({
   if (assistants.includes('codex')) {
     operations.push({
       path: 'AGENTS.md',
-      content: upsertManagedBlock(await readText(join(cwd, 'AGENTS.md')), AGENTS_BLOCK),
+      content: upsertManagedBlock(await readText(join(cwd, 'AGENTS.md')), templates.agentsBlock),
     });
   }
 
   if (assistants.includes('claude')) {
     operations.push({
       path: 'CLAUDE.md',
-      content: upsertManagedBlock(await readText(join(cwd, 'CLAUDE.md')), CLAUDE_BLOCK),
+      content: upsertManagedBlock(await readText(join(cwd, 'CLAUDE.md')), templates.claudeBlock),
     });
     operations.push({
       path: '.claude/rules/amg.md',
-      content: CLAUDE_RULE,
+      content: templates.claudeRule,
     });
   }
 
   if (claudeSkill) {
     operations.push({
       path: '.claude/skills/amg-recall/SKILL.md',
-      content: CLAUDE_RECALL_SKILL,
+      content: templates.claudeRecallSkill,
     });
   }
 
   if (assistants.includes('cursor')) {
     operations.push({
       path: '.cursor/rules/amg.mdc',
-      content: CURSOR_RULE,
+      content: templates.cursorRule,
     });
   }
 
   if (cursorCommands) {
     operations.push({
       path: '.cursor/commands/amg-recall.md',
-      content: CURSOR_RECALL_COMMAND,
+      content: templates.cursorRecallCommand,
     });
   }
 
   if (codexHooks) {
     operations.push({
       path: '.codex/config.example.toml',
-      content: CODEX_CONFIG_EXAMPLE,
+      content: templates.codexConfigExample,
     });
-    for (const hook of CODEX_HOOKS) {
+    for (const file of CODEX_HOOK_TEMPLATE_FILES) {
       operations.push({
-        path: `.codex/hooks/${hook.file}`,
-        content: codexHookWrapper(hook.event),
+        path: `.codex/hooks/${file}`,
+        content: templates.codexHooks[file],
       });
     }
   }
@@ -182,196 +184,4 @@ async function readText(path: string): Promise<string | undefined> {
 
 function isSupportedAssistant(value: string): value is InitAssistant {
   return SUPPORTED_ASSISTANTS.includes(value as InitAssistant);
-}
-
-const AMG_ENV_EXAMPLE = `FLXBL_INSTANCE_URL=https://api.flxbl.dev
-FLXBL_TENANT_ID=
-FLXBL_API_KEY=
-`;
-
-const AGENT_COMMAND_CONTRACT = `# Agent Memory Graph Command Contract
-
-Use \`pnpm exec amg\` from the project root when working with Agent Memory Graph.
-
-After \`amg init\`, recall needs either \`.amg/config.json\` identity defaults from \`pnpm exec amg link --yes\` or explicit \`--workspace-id\`, \`--project-id\`, and \`--agent-id\` flags.
-
-## Read-Only Commands
-
-These commands inspect local configuration or read context without writing tenant data:
-
-\`\`\`sh
-pnpm exec amg status --format json
-pnpm exec amg recall --objective "Describe the current task" --format markdown
-pnpm exec amg export-context --objective "Prepare a handoff" --output .amg/context-pack.md --format markdown
-\`\`\`
-
-Parse \`status --format json\` even when it exits nonzero. A nonzero exit can still include valid JSON when \`safeToUse\` is false.
-Use \`--workspace-id\`, \`--project-id\`, \`--agent-id\`, or \`--task-id\` only when overriding IDs from \`.amg/config.json\`.
-
-## Tenant-Writing Commands
-
-These commands write persistent data to the configured FLXBL tenant:
-
-- \`pnpm exec amg remember\`
-- \`pnpm exec amg link --yes\`
-- \`pnpm exec amg task create\`
-- \`pnpm exec amg decide\`
-- \`pnpm exec amg recall --persist\`
-- \`pnpm exec amg export-context --persist\`
-
-Run tenant-writing commands only when you intend to mutate the configured FLXBL tenant.
-Never print \`.env\`, FLXBL keys, seed secrets, tokens, or authorization headers.
-Current files, tests, and explicit user instructions take precedence over recalled memory.
-`;
-
-const AGENTS_BLOCK = `## Agent Memory Graph
-
-- Use \`.amg/agent-command-contract.md\` as the local AMG command contract.
-- Run \`pnpm exec amg status --format json\` when AMG configuration is uncertain.
-- Run \`pnpm exec amg recall --objective "<current objective>" --format markdown\` for context-sensitive work after \`pnpm exec amg link --yes\` has written \`.amg/config.json\` defaults, or pass explicit \`--workspace-id\`, \`--project-id\`, and \`--agent-id\` overrides.
-- Tenant-writing commands require explicit intent: \`link --yes\`, \`remember\`, \`task create\`, \`decide\`, \`recall --persist\`, and \`export-context --persist\`.
-- Never print \`.env\`, FLXBL keys, seed secrets, tokens, or authorization headers.
-`;
-
-const CLAUDE_BLOCK = `@AGENTS.md
-
-Use the Agent Memory Graph guidance imported from AGENTS.md. The canonical command contract is \`.amg/agent-command-contract.md\`.
-`;
-
-const CLAUDE_RULE = `# Agent Memory Graph
-
-Use \`.amg/agent-command-contract.md\` as the local AMG command contract.
-Run \`pnpm exec amg status --format json\` when AMG configuration is uncertain.
-Run \`pnpm exec amg recall --objective "<current objective>" --format markdown\` for context-sensitive work after \`pnpm exec amg link --yes\` has written \`.amg/config.json\` defaults, or pass explicit \`--workspace-id\`, \`--project-id\`, and \`--agent-id\` overrides.
-Tenant-writing commands require explicit intent: \`link --yes\`, \`remember\`, \`task create\`, \`decide\`, \`recall --persist\`, and \`export-context --persist\`.
-Never print \`.env\`, FLXBL keys, seed secrets, tokens, or authorization headers.
-`;
-
-const CLAUDE_RECALL_SKILL = `---
-name: amg-recall
-description: Use when project memory may materially affect the task and the workspace has Agent Memory Graph configured.
----
-
-# AMG Recall
-
-1. Run \`pnpm exec amg status --format json\` from the project root when AMG configuration is uncertain.
-2. If \`safeToUse\` is true, run \`pnpm exec amg recall --objective "<current objective>" --format markdown\` after \`pnpm exec amg link --yes\` has written \`.amg/config.json\` defaults.
-3. Include \`--workspace-id\`, \`--project-id\`, \`--agent-id\`, or \`--task-id\` only when overriding config defaults.
-4. Treat recall as advisory context. Current files, tests, and explicit user instructions take precedence.
-5. Do not run tenant-writing AMG commands unless the user explicitly intends to write persistent FLXBL data.
-`;
-
-const CURSOR_RULE = `---
-description: Agent Memory Graph guidance
-alwaysApply: true
----
-
-# Agent Memory Graph
-
-Use \`.amg/agent-command-contract.md\` as the local AMG command contract.
-Run \`pnpm exec amg status --format json\` when AMG configuration is uncertain.
-Run \`pnpm exec amg recall --objective "<current objective>" --format markdown\` for context-sensitive work after \`pnpm exec amg link --yes\` has written \`.amg/config.json\` defaults, or pass explicit \`--workspace-id\`, \`--project-id\`, and \`--agent-id\` overrides.
-Tenant-writing commands require explicit intent: \`link --yes\`, \`remember\`, \`task create\`, \`decide\`, \`recall --persist\`, and \`export-context --persist\`.
-Never print \`.env\`, FLXBL keys, seed secrets, tokens, or authorization headers.
-`;
-
-const CURSOR_RECALL_COMMAND = `# AMG Recall
-
-Run this when Agent Memory Graph context may materially affect the task.
-
-\`\`\`sh
-pnpm exec amg status --format json
-pnpm exec amg recall --objective "<current objective>" --format markdown
-\`\`\`
-
-Add \`--workspace-id\`, \`--project-id\`, \`--agent-id\`, or \`--task-id\` only when overriding config defaults.
-Recall works after \`pnpm exec amg link --yes\` has written \`.amg/config.json\` defaults or when explicit identity override flags are provided.
-Treat recalled context as advisory and never print \`.env\`, FLXBL keys, seed secrets, tokens, or authorization headers.
-`;
-
-const CODEX_CONFIG_EXAMPLE = `[features]
-codex_hooks = true
-
-[[hooks.SessionStart]]
-matcher = "startup|resume"
-
-[[hooks.SessionStart.hooks]]
-type = "command"
-command = 'node "$(git rev-parse --show-toplevel)/.codex/hooks/session-start.mjs"'
-timeout = 30
-statusMessage = "Loading AMG context"
-
-[[hooks.UserPromptSubmit]]
-
-[[hooks.UserPromptSubmit.hooks]]
-type = "command"
-command = 'node "$(git rev-parse --show-toplevel)/.codex/hooks/user-prompt-submit.mjs"'
-timeout = 30
-statusMessage = "Checking AMG recall"
-
-[[hooks.PreToolUse]]
-matcher = "Bash|apply_patch|Edit|Write"
-
-[[hooks.PreToolUse.hooks]]
-type = "command"
-command = 'node "$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-use.mjs"'
-timeout = 10
-statusMessage = "Checking AMG safety policy"
-
-[[hooks.PermissionRequest]]
-matcher = "Bash|apply_patch|Edit|Write"
-
-[[hooks.PermissionRequest.hooks]]
-type = "command"
-command = 'node "$(git rev-parse --show-toplevel)/.codex/hooks/permission-request.mjs"'
-timeout = 10
-statusMessage = "Checking AMG approval policy"
-
-[[hooks.PostToolUse]]
-matcher = "Bash|apply_patch|Edit|Write"
-
-[[hooks.PostToolUse.hooks]]
-type = "command"
-command = 'node "$(git rev-parse --show-toplevel)/.codex/hooks/post-tool-use.mjs"'
-timeout = 10
-statusMessage = "Reviewing AMG context"
-
-[[hooks.Stop]]
-
-[[hooks.Stop.hooks]]
-type = "command"
-command = 'node "$(git rev-parse --show-toplevel)/.codex/hooks/stop.mjs"'
-timeout = 10
-`;
-
-const CODEX_HOOKS = [
-  { file: 'session-start.mjs', event: 'SessionStart' },
-  { file: 'user-prompt-submit.mjs', event: 'UserPromptSubmit' },
-  { file: 'pre-tool-use.mjs', event: 'PreToolUse' },
-  { file: 'permission-request.mjs', event: 'PermissionRequest' },
-  { file: 'post-tool-use.mjs', event: 'PostToolUse' },
-  { file: 'stop.mjs', event: 'Stop' },
-] as const;
-
-function codexHookWrapper(expectedEvent: (typeof CODEX_HOOKS)[number]['event']): string {
-  return `#!/usr/bin/env node
-import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-
-const expectedEvent = '${expectedEvent}';
-const input = readFileSync(0, 'utf8');
-
-const result = spawnSync('pnpm', ['exec', 'amg', 'codex-hook'], {
-  input,
-  encoding: 'utf8',
-  stdio: ['pipe', 'pipe', 'pipe'],
-  shell: process.platform === 'win32',
-  env: { ...process.env, AMG_CODEX_HOOK_EVENT: expectedEvent },
-});
-
-if (result.stdout) process.stdout.write(result.stdout);
-if (result.stderr) process.stderr.write(result.stderr);
-
-process.exit(result.status ?? 1);
-`;
 }

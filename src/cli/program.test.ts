@@ -23,6 +23,7 @@ describe('createAmgProgram', () => {
     expect(program.commands.map((command) => command.name())).toEqual([
       'init',
       'status',
+      'schema',
       'link',
       'recall',
       'remember',
@@ -38,9 +39,24 @@ describe('createAmgProgram', () => {
 
     expect(helpText).toContain('Usage: amg [options] [command]');
     expect(helpText).toContain('init');
+    expect(helpText).toContain('schema');
     expect(helpText).toContain('codex-hook');
     expect(helpText).not.toContain('amg:recall');
     expect(helpText).not.toContain('pnpm amg');
+  });
+
+  it('renders help for schema export options', () => {
+    const schemaCommand = createAmgProgram().commands.find((command) => command.name() === 'schema');
+    const exportCommand = schemaCommand?.commands.find((command) => command.name() === 'export');
+
+    expect(schemaCommand).toBeDefined();
+    expect(exportCommand).toBeDefined();
+
+    const helpText = exportCommand!.helpInformation();
+
+    expect(helpText).toContain('Usage: amg schema export');
+    expect(helpText).toContain('--output <path>');
+    expect(helpText).toContain('--force');
   });
 
   it('runs status as parseable json without throwing when env is missing', async () => {

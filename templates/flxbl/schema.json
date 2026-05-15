@@ -1,0 +1,1481 @@
+{
+  "name": "AgentMemoryGraph",
+  "version": "1.0.0",
+  "description": "Graph-backed long-term memory for coding agents, built with FLXBL",
+  "entities": [
+    {
+      "name": "AppUser",
+      "description": "Identity user for Agent Memory Graph",
+      "isIdentity": true,
+      "identifierField": "email",
+      "fields": [
+        {
+          "name": "email",
+          "type": "STRING",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "password",
+          "type": "PASSWORD",
+          "required": true
+        },
+        {
+          "name": "displayName",
+          "type": "STRING",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "role",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "owner",
+            "admin",
+            "member",
+            "viewer"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Workspace",
+      "fields": [
+        {
+          "name": "name",
+          "type": "STRING",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "slug",
+          "type": "STRING",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "required": false,
+          "searchable": true
+        }
+      ]
+    },
+    {
+      "name": "Project",
+      "fields": [
+        {
+          "name": "name",
+          "type": "STRING",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "slug",
+          "type": "STRING",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "status",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "active",
+            "archived"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Agent",
+      "fields": [
+        {
+          "name": "name",
+          "type": "STRING",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "kind",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "codex",
+            "claude-code",
+            "cursor",
+            "custom"
+          ]
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "systemHint",
+          "type": "TEXT",
+          "required": false,
+          "searchable": true
+        }
+      ]
+    },
+    {
+      "name": "Memory",
+      "fields": [
+        {
+          "name": "title",
+          "type": "STRING",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "body",
+          "type": "TEXT",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "type",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "semantic",
+            "episodic",
+            "procedural",
+            "decision",
+            "constraint",
+            "warning"
+          ]
+        },
+        {
+          "name": "scope",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "workspace",
+            "project",
+            "agent",
+            "user"
+          ]
+        },
+        {
+          "name": "status",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "active",
+            "superseded",
+            "archived"
+          ]
+        },
+        {
+          "name": "confidence",
+          "type": "FLOAT",
+          "required": true
+        },
+        {
+          "name": "importance",
+          "type": "NUMBER",
+          "required": true
+        },
+        {
+          "name": "source",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "manual",
+            "seed",
+            "api",
+            "cli",
+            "conversation"
+          ]
+        },
+        {
+          "name": "validFrom",
+          "type": "DATETIME",
+          "required": false
+        },
+        {
+          "name": "validUntil",
+          "type": "DATETIME",
+          "required": false
+        },
+        {
+          "name": "lastUsedAt",
+          "type": "DATETIME",
+          "required": false
+        },
+        {
+          "name": "useCount",
+          "type": "NUMBER",
+          "required": true
+        },
+        {
+          "name": "embedding",
+          "type": "VECTOR",
+          "required": false,
+          "vectorDimensions": 8
+        }
+      ]
+    },
+    {
+      "name": "Conversation",
+      "fields": [
+        {
+          "name": "title",
+          "type": "STRING",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "source",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "manual",
+            "demo",
+            "cli"
+          ]
+        },
+        {
+          "name": "startedAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "endedAt",
+          "type": "DATETIME",
+          "required": false
+        },
+        {
+          "name": "summary",
+          "type": "TEXT",
+          "required": false,
+          "searchable": true
+        }
+      ]
+    },
+    {
+      "name": "Message",
+      "fields": [
+        {
+          "name": "role",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "user",
+            "assistant",
+            "system",
+            "tool"
+          ]
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "tokenEstimate",
+          "type": "NUMBER",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Task",
+      "fields": [
+        {
+          "name": "title",
+          "type": "STRING",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "status",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "todo",
+            "doing",
+            "blocked",
+            "done"
+          ]
+        },
+        {
+          "name": "priority",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "low",
+            "medium",
+            "high"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Artifact",
+      "fields": [
+        {
+          "name": "name",
+          "type": "STRING",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "kind",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "file",
+            "doc",
+            "prompt",
+            "schema",
+            "command",
+            "pr",
+            "issue",
+            "note"
+          ]
+        },
+        {
+          "name": "uri",
+          "type": "STRING",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "summary",
+          "type": "TEXT",
+          "required": false,
+          "searchable": true
+        }
+      ]
+    },
+    {
+      "name": "Decision",
+      "fields": [
+        {
+          "name": "title",
+          "type": "STRING",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "rationale",
+          "type": "TEXT",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "status",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "proposed",
+            "accepted",
+            "rejected",
+            "superseded"
+          ]
+        },
+        {
+          "name": "decidedAt",
+          "type": "DATETIME",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Concept",
+      "fields": [
+        {
+          "name": "name",
+          "type": "STRING",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "kind",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "technology",
+            "person",
+            "feature",
+            "module",
+            "risk",
+            "term"
+          ]
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "required": false,
+          "searchable": true
+        }
+      ]
+    },
+    {
+      "name": "ContextPack",
+      "fields": [
+        {
+          "name": "objective",
+          "type": "TEXT",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "query",
+          "type": "TEXT",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "format",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "json",
+            "markdown"
+          ]
+        },
+        {
+          "name": "resultJson",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "resultMarkdown",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "tokenBudget",
+          "type": "NUMBER",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ToolCall",
+      "fields": [
+        {
+          "name": "toolName",
+          "type": "STRING",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "name": "inputSummary",
+          "type": "TEXT",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "outputSummary",
+          "type": "TEXT",
+          "required": false,
+          "searchable": true
+        },
+        {
+          "name": "status",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "success",
+            "failed",
+            "skipped"
+          ]
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "name": "MEMBER_OF",
+      "sourceEntityName": "AppUser",
+      "targetEntityName": "Workspace",
+      "cardinality": "MANY_TO_MANY",
+      "description": "User membership in a workspace with typed access metadata",
+      "fields": [
+        {
+          "name": "role",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "owner",
+            "admin",
+            "member",
+            "viewer"
+          ]
+        },
+        {
+          "name": "joinedAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "invitedBy",
+          "type": "STRING",
+          "required": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "HAS_PROJECT",
+      "sourceEntityName": "Workspace",
+      "targetEntityName": "Project",
+      "cardinality": "ONE_TO_MANY",
+      "description": "Workspace contains projects with project role metadata",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "role",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "primary",
+            "archive",
+            "demo"
+          ]
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "USES_AGENT",
+      "sourceEntityName": "Project",
+      "targetEntityName": "Agent",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Project uses an agent for a typed purpose",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "purpose",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "defaultForProject",
+          "type": "BOOLEAN",
+          "required": false
+        },
+        {
+          "name": "strength",
+          "type": "FLOAT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "HAS_MESSAGE",
+      "sourceEntityName": "Conversation",
+      "targetEntityName": "Message",
+      "cardinality": "ONE_TO_MANY",
+      "description": "Conversation contains ordered messages",
+      "fields": [
+        {
+          "name": "sequence",
+          "type": "NUMBER",
+          "required": true
+        },
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "windowRole",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "context",
+            "prompt",
+            "response",
+            "tool_trace"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PRODUCED_MEMORY",
+      "sourceEntityName": "Message",
+      "targetEntityName": "Memory",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Message produced a memory with extraction metadata",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "extractionMethod",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "manual",
+            "seed",
+            "api",
+            "cli",
+            "conversation"
+          ]
+        },
+        {
+          "name": "confidence",
+          "type": "FLOAT",
+          "required": false
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DERIVED_FROM_MESSAGE",
+      "sourceEntityName": "Memory",
+      "targetEntityName": "Message",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Memory was derived from a message span",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "sourceSpan",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "excerpt",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "confidence",
+          "type": "FLOAT",
+          "required": false
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DERIVED_FROM_CONVERSATION",
+      "sourceEntityName": "Memory",
+      "targetEntityName": "Conversation",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Memory was derived from a conversation summary",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "summaryBasis",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "confidence",
+          "type": "FLOAT",
+          "required": false
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DERIVED_FROM_TOOL_CALL",
+      "sourceEntityName": "Memory",
+      "targetEntityName": "ToolCall",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Memory was derived from a tool call",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "inputPath",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "outputPath",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "failureMode",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "confidence",
+          "type": "FLOAT",
+          "required": false
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DERIVED_FROM_ARTIFACT",
+      "sourceEntityName": "Memory",
+      "targetEntityName": "Artifact",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Memory was derived from an artifact fragment",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "uriFragment",
+          "type": "STRING",
+          "required": false
+        },
+        {
+          "name": "lineStart",
+          "type": "NUMBER",
+          "required": false
+        },
+        {
+          "name": "lineEnd",
+          "type": "NUMBER",
+          "required": false
+        },
+        {
+          "name": "confidence",
+          "type": "FLOAT",
+          "required": false
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "SCOPED_TO_WORKSPACE",
+      "sourceEntityName": "Memory",
+      "targetEntityName": "Workspace",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Memory is scoped to a workspace with typed scope metadata",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "scopeReason",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "validFrom",
+          "type": "DATETIME",
+          "required": false
+        },
+        {
+          "name": "validUntil",
+          "type": "DATETIME",
+          "required": false
+        },
+        {
+          "name": "priority",
+          "type": "NUMBER",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "SCOPED_TO_PROJECT",
+      "sourceEntityName": "Memory",
+      "targetEntityName": "Project",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Memory is scoped to a project with typed scope metadata",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "scopeReason",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "validFrom",
+          "type": "DATETIME",
+          "required": false
+        },
+        {
+          "name": "validUntil",
+          "type": "DATETIME",
+          "required": false
+        },
+        {
+          "name": "priority",
+          "type": "NUMBER",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "APPLIES_TO",
+      "sourceEntityName": "Memory",
+      "targetEntityName": "Agent",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Memory applies to an agent with typed applicability metadata",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "strength",
+          "type": "FLOAT",
+          "required": false
+        },
+        {
+          "name": "required",
+          "type": "BOOLEAN",
+          "required": false
+        },
+        {
+          "name": "validFrom",
+          "type": "DATETIME",
+          "required": false
+        },
+        {
+          "name": "validUntil",
+          "type": "DATETIME",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ABOUT_TASK",
+      "sourceEntityName": "Memory",
+      "targetEntityName": "Task",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Memory is about a task with typed task relevance",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "relevance",
+          "type": "FLOAT",
+          "required": false
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "taskPhase",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "planning",
+            "implementation",
+            "verification",
+            "release"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ABOUT_ARTIFACT",
+      "sourceEntityName": "Memory",
+      "targetEntityName": "Artifact",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Memory is about an artifact with typed artifact role",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "relevance",
+          "type": "FLOAT",
+          "required": false
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "artifactRole",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "source",
+            "output",
+            "reference",
+            "warning"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ABOUT_DECISION",
+      "sourceEntityName": "Memory",
+      "targetEntityName": "Decision",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Memory is about a decision with typed decision role",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "relevance",
+          "type": "FLOAT",
+          "required": false
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "decisionRole",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "rationale",
+            "consequence",
+            "alternative",
+            "warning"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MENTIONS",
+      "sourceEntityName": "Memory",
+      "targetEntityName": "Concept",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Memory mentions a concept with salience metadata",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "phrase",
+          "type": "STRING",
+          "required": false
+        },
+        {
+          "name": "salience",
+          "type": "FLOAT",
+          "required": false
+        },
+        {
+          "name": "confidence",
+          "type": "FLOAT",
+          "required": false
+        },
+        {
+          "name": "occurrenceCount",
+          "type": "NUMBER",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RELATED_TO",
+      "sourceEntityName": "Memory",
+      "targetEntityName": "Memory",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Memory relates to another memory with typed relation metadata",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "relationKind",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "similar",
+            "prerequisite",
+            "consequence",
+            "example",
+            "caveat"
+          ]
+        },
+        {
+          "name": "strength",
+          "type": "FLOAT",
+          "required": false
+        },
+        {
+          "name": "confidence",
+          "type": "FLOAT",
+          "required": false
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "SUPERSEDES",
+      "sourceEntityName": "Memory",
+      "targetEntityName": "Memory",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Memory supersedes another memory with replacement metadata",
+      "fields": [
+        {
+          "name": "supersededAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "supersessionType",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "replaces",
+            "corrects",
+            "narrows",
+            "broadens",
+            "expires"
+          ]
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "replacementScope",
+          "type": "TEXT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "SUPPORTS",
+      "sourceEntityName": "Memory",
+      "targetEntityName": "Decision",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Memory supports a decision with argument metadata",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "argumentSummary",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "strength",
+          "type": "FLOAT",
+          "required": false
+        },
+        {
+          "name": "confidence",
+          "type": "FLOAT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "CONTRADICTS",
+      "sourceEntityName": "Memory",
+      "targetEntityName": "Decision",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Memory contradicts a decision with argument metadata",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "argumentSummary",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "strength",
+          "type": "FLOAT",
+          "required": false
+        },
+        {
+          "name": "confidence",
+          "type": "FLOAT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "PRODUCED",
+      "sourceEntityName": "Task",
+      "targetEntityName": "Artifact",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Task produced an artifact with output metadata",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "role",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "primary_output",
+            "supporting_output",
+            "log",
+            "report"
+          ]
+        },
+        {
+          "name": "summary",
+          "type": "TEXT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "USES_MEMORY",
+      "sourceEntityName": "Task",
+      "targetEntityName": "Memory",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Task uses a memory with typed usage metadata",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "usage",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "input",
+            "reference",
+            "blocker",
+            "validation"
+          ]
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "required": false
+        },
+        {
+          "name": "strength",
+          "type": "FLOAT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RECORDED_DECISION",
+      "sourceEntityName": "Task",
+      "targetEntityName": "Decision",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Task recorded a decision with evidence metadata",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "role",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "primary",
+            "supporting",
+            "superseded"
+          ]
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RECORDED_TOOL_CALL",
+      "sourceEntityName": "Task",
+      "targetEntityName": "ToolCall",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Task recorded a tool call with evidence metadata",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "phase",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "setup",
+            "retrieval",
+            "mutation",
+            "verification"
+          ]
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "INCLUDES",
+      "sourceEntityName": "ContextPack",
+      "targetEntityName": "Memory",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Context pack includes a memory with retrieval explanation metadata",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "section",
+          "type": "ENUM",
+          "required": true,
+          "enumValues": [
+            "constraints",
+            "procedural",
+            "decisions",
+            "semantic",
+            "episodic",
+            "artifacts",
+            "tasks",
+            "warnings"
+          ]
+        },
+        {
+          "name": "rank",
+          "type": "NUMBER",
+          "required": true
+        },
+        {
+          "name": "score",
+          "type": "FLOAT",
+          "required": true
+        },
+        {
+          "name": "why",
+          "type": "JSON",
+          "required": false
+        },
+        {
+          "name": "relationshipPath",
+          "type": "JSON",
+          "required": false
+        },
+        {
+          "name": "retrievalFactors",
+          "type": "JSON",
+          "required": false
+        },
+        {
+          "name": "tokenEstimate",
+          "type": "NUMBER",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "FOR_TASK",
+      "sourceEntityName": "ContextPack",
+      "targetEntityName": "Task",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Context pack is generated for a task",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "taskRole",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "primary",
+            "handoff",
+            "verification"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "FOR_PROJECT",
+      "sourceEntityName": "ContextPack",
+      "targetEntityName": "Project",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Context pack is generated for a project",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "objectiveRole",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "primary",
+            "comparison",
+            "background"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "FOR_AGENT",
+      "sourceEntityName": "ContextPack",
+      "targetEntityName": "Agent",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Context pack is generated for an agent",
+      "fields": [
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "agentRole",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "primary",
+            "reviewer",
+            "fallback"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PART_OF",
+      "sourceEntityName": "ToolCall",
+      "targetEntityName": "Conversation",
+      "cardinality": "MANY_TO_MANY",
+      "description": "Tool call is part of a conversation with sequence metadata",
+      "fields": [
+        {
+          "name": "sequence",
+          "type": "NUMBER",
+          "required": true
+        },
+        {
+          "name": "createdAt",
+          "type": "DATETIME",
+          "required": true
+        },
+        {
+          "name": "phase",
+          "type": "ENUM",
+          "required": false,
+          "enumValues": [
+            "setup",
+            "retrieval",
+            "mutation",
+            "verification"
+          ]
+        },
+        {
+          "name": "visibleToAgent",
+          "type": "BOOLEAN",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

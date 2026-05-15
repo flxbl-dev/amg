@@ -182,7 +182,7 @@ describe('applyInitPlan', () => {
       await applyInitPlan(await planInit({ cwd: dir, assistants: [], codexHooks: false }));
 
       await expect(readFile(join(dir, '.amg/agent-command-contract.md'), 'utf8')).resolves.toContain(
-        'pnpm exec amg link --yes',
+        'amg link --yes',
       );
     });
   });
@@ -212,12 +212,21 @@ describe('applyInitPlan', () => {
         const text = await readFile(join(dir, file), 'utf8');
         expect(text).toContain('amg recall --objective');
         expect(text).toContain('--format markdown');
-        expect(text).not.toContain('Use `pnpm exec amg recall` for context-sensitive work');
+        expect(text).not.toContain('pnpm exec amg');
+        expect(text).not.toContain('npx amg');
+        expect(text).not.toContain('pnpm amg:');
       }
 
       const agents = await readFile(join(dir, 'AGENTS.md'), 'utf8');
-      expect(agents).toContain('after `pnpm exec amg link --yes` has written `.amg/config.json` defaults');
+      expect(agents).toContain('after `amg link --yes` has written `.amg/config.json` defaults');
       expect(agents).toContain('explicit `--workspace-id`, `--project-id`, and `--agent-id` overrides');
+
+      const contract = await readFile(join(dir, '.amg/agent-command-contract.md'), 'utf8');
+      expect(contract).toContain('During Implementation');
+      expect(contract).toContain('amg task create');
+      expect(contract).toContain('amg decide');
+      expect(contract).toContain('Supersedes prior guidance about');
+      expect(contract).toContain('AMG is not a diary');
     });
   });
 
@@ -260,6 +269,8 @@ describe('applyInitPlan', () => {
       expect(hook).toContain("readFileSync(0, 'utf8')");
       expect(hook).toContain('codex-hook');
       expect(hook).toContain('AMG_CODEX_HOOK_EVENT');
+      expect(hook).toContain('result.status !== 0');
+      expect(hook).toContain('JSON.stringify({ continue: true })');
     });
   });
 

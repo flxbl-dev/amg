@@ -2,12 +2,13 @@ import { loadAmgConfig } from '../config/load.js';
 import { readFlxblContext, type FlxblContext, type ReadFlxblContextOptions } from '../flxbl/context.js';
 import { formatError, redactSecrets, secretValuesFromEnv } from '../output/secrets.js';
 
-const MIN_SCHEMA_VERSION = '1.3.0';
+const MIN_SCHEMA_VERSION = '1.0.0';
 const EXPECTED_SCHEMA_NAME = 'AgentMemoryGraph';
 
 export const STATUS_COMMANDS = [
   'init',
   'status',
+  'schema:export',
   'link',
   'recall',
   'remember',

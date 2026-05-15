@@ -1,6 +1,6 @@
 {
   "name": "@flxbl-dev/amg",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Agent Memory Graph CLI for coding-agent memory on FLXBL.",
   "license": "MIT",
   "type": "module",

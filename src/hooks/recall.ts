@@ -14,7 +14,7 @@ type AmgStatusOutput = {
 export async function recallAmgContext(options: RecallOptions): Promise<string | null> {
   if (options.env.AMG_HOOKS_RECALL !== '1') return null;
 
-  const status = await options.runner('pnpm', ['exec', 'amg', 'status', '--format', 'json'], {
+  const status = await options.runner('amg', ['status', '--format', 'json'], {
     cwd: options.cwd,
     env: options.env,
   });
@@ -23,8 +23,6 @@ export async function recallAmgContext(options: RecallOptions): Promise<string |
   if (!parsedStatus.safeToUse) return null;
 
   const args = [
-    'exec',
-    'amg',
     'recall',
     '--objective',
     options.objective,
@@ -37,7 +35,7 @@ export async function recallAmgContext(options: RecallOptions): Promise<string |
   if (options.env.AMG_AGENT_ID) args.push('--agent-id', options.env.AMG_AGENT_ID);
   if (options.env.AMG_TASK_ID) args.push('--task-id', options.env.AMG_TASK_ID);
 
-  const recall = await options.runner('pnpm', args, { cwd: options.cwd, env: options.env });
+  const recall = await options.runner('amg', args, { cwd: options.cwd, env: options.env });
   if (recall.status !== 0 || !recall.stdout.trim()) return null;
 
   return recall.stdout.trim();
