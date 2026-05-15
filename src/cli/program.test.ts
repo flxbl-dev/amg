@@ -1,10 +1,13 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it, vi } from 'vitest';
 
 import { createAmgProgram } from './program.js';
+
+const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 async function withTempDir<T>(run: (dir: string) => Promise<T>): Promise<T> {
   const dir = await mkdtemp(join(tmpdir(), 'amg-program-'));
@@ -17,6 +20,12 @@ async function withTempDir<T>(run: (dir: string) => Promise<T>): Promise<T> {
 }
 
 describe('createAmgProgram', () => {
+  it('reports the package version', async () => {
+    const packageJson = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8')) as { version: string };
+
+    expect(createAmgProgram().version()).toBe(packageJson.version);
+  });
+
   it('registers the public top-level commands in order', () => {
     const program = createAmgProgram();
 

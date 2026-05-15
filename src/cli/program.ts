@@ -37,7 +37,7 @@ export function createAmgProgram(options: CreateAmgProgramOptions = {}): Command
   program
     .name('amg')
     .description('Agent Memory Graph adoption CLI')
-    .version('0.1.0');
+    .version('0.1.2');
 
   for (const commandName of commandNames) {
     if (commandName === 'init') {
